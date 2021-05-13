@@ -3,11 +3,13 @@
  // === Imports ===
 const { src, dest, series, watch } = require('gulp');
 
+const del = require('del');
 const pug = require('gulp-pug');
 const sass = require('gulp-sass');
-const postcss = require('gulp-postcss');
-const autoprefixer = require('autoprefixer');
+const cleanCSS = require('gulp-clean-css');
+const autoprefixer = require('gulp-autoprefixer');
 const svgSprite = require('gulp-svg-sprite');
+const rigger = require('gulp-rigger');
 const uglify = require('gulp-uglify');
 const concat = require('gulp-concat');
 
@@ -24,35 +26,39 @@ const settings = {
   copy: false,
 }
 
+const baseSrc = './app';
+const baseDest = './build';
+
 const paths = {
   src: {
-    main: './app',
-    js: `${path.src.main}/js`,
-    scss: `${paths.src.main}/scss/**/**/*.scss`,
-    images: `${paths.src.main}/images/*`,
-    pug: `${paths.src.main}/pug/`,
+    js: `${baseSrc}/js/main.js`,
+    scss: `${baseSrc}/scss/main.scss`,
+    images: `${baseSrc}/images`,
+    pug: baseSrc,
   },
   dist: {
-    main: './build',
-    css: `${paths.dist.main}/css`,
-    js: `${paths.dist.main}/javascript`,
-    images: `${paths.dist.main}/images`,
+    css: `${baseDest}/css`,
+    js: `${baseDest}/js`,
+    images: `${baseDest}/images`,
   },
 };
+
+const cleanBuild = () => del(`${baseDest}/**/*`, { force: true })
 
 const buildCSS = (done) => {
   if (!settings.styles) {
     return done();
   }
 
-  return src('./app/scss/app.scss')
+  return src(paths.src.scss)
     .pipe(sass({
       outputStyle: 'expanded',
     }))
     .pipe(sass().on('error', sass.logError))
-    .pipe(postcss([autoprefixer()]))
-    .pipe(concat('main.css'))
-    .pipe(dest(paths.build.css))
+    .pipe(autoprefixer())
+    .pipe(cleanCSS())
+    .pipe(concat('style.css'))
+    .pipe(dest(paths.dist.css))
     .pipe(browserSync.stream())
 };
 
@@ -65,7 +71,7 @@ const buildPug = (done) => {
   .pipe(pug({
     pretty: false,
   }))
-  .pipe(dist(paths.dist.main))
+  .pipe(dest(baseDest))
   .pipe(browserSync.stream())
 }
 
@@ -74,32 +80,37 @@ const buildJS = (done) => {
     return done();
   }
 
-  return src(`${paths.src.scripts}/*.js`)
+  return src(paths.src.js)
+    .pipe(rigger())
     .pipe(uglify())
-    .pipe(gulp.dest(path.build.js))
+    .pipe(concat('main.js'))
+    .pipe(dest(paths.dist.js))
     .pipe(browserSync.stream());
 }
 
 const buildSVG = () => {
-  return src('path/to/assets/*.svg')
+  return src(`${paths.src.images}/**/*.svg`)
     .pipe(svgSprite())
-    .pipe(gulp.dest(paths.dist.images));
+    .pipe(dest(paths.dist.images));
 }
 
 const watchers = () => {
-  browserSync.init({
-    server: {
-      baseDir: paths.src.main,
-      index: 'index.pug',
-    },
-  });
-
   watch(paths.src.scss, buildCSS);
   watch(paths.src.pug, buildPug);
-  watch(paths.src.scripts, buildJS);
+  watch(paths.src.js, buildJS);
+
+  browserSync.init({
+    server: {
+      baseDir: baseDest,
+    },
+    watch: true,
+    notify: false,
+    online: false,
+  });
 };
 
 exports.default = series(
+  cleanBuild,
   buildCSS,
   buildPug,
   buildJS,
