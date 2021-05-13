@@ -9,7 +9,6 @@ const sass = require('gulp-sass');
 const cleanCSS = require('gulp-clean-css');
 const autoprefixer = require('gulp-autoprefixer');
 const svgSprite = require('gulp-svg-sprite');
-const rigger = require('gulp-rigger');
 const uglify = require('gulp-uglify');
 const concat = require('gulp-concat');
 
@@ -80,8 +79,12 @@ const buildJS = (done) => {
     return done();
   }
 
-  return src(paths.src.js)
-    .pipe(rigger())
+  return src([
+    paths.src.js,
+    './node_modules/jquery/dist/jquery.min.js',
+    './node_modules/popper.js/dist/umd/popper.min.js',
+    './node_modules/bootstrap/dist/js/bootstrap.min.js',
+  ])
     .pipe(uglify())
     .pipe(concat('main.js'))
     .pipe(dest(paths.dist.js))
