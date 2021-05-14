@@ -32,14 +32,20 @@ const paths = {
   src: {
     js: `${baseSrc}/js/main.js`,
     scss: `${baseSrc}/scss/main.scss`,
-    images: `${baseSrc}/images`,
     pug: baseSrc,
+    images: `${baseSrc}/images`,
   },
   dist: {
-    css: `${baseDest}/css`,
     js: `${baseDest}/js`,
+    css: `${baseDest}/css`,
     images: `${baseDest}/images`,
   },
+  watch: {
+    js: `${baseSrc}/js/**/*.js`,
+    scss: `${baseSrc}/scss/**/*.scss`,
+    pug: baseSrc,
+    images: `${baseSrc}/images`,
+  }
 };
 
 const cleanBuild = () => del(`${baseDest}/**/*`, { force: true })
@@ -98,9 +104,9 @@ const buildSVG = () => {
 }
 
 const watchers = () => {
-  watch(paths.src.scss, buildCSS);
-  watch(paths.src.pug, buildPug);
-  watch(paths.src.js, buildJS);
+  watch(paths.watch.scss, buildCSS);
+  watch(paths.watch.pug, buildPug);
+  watch(paths.watch.js, buildJS);
 
   browserSync.init({
     server: {
