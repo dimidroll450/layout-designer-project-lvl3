@@ -22,7 +22,7 @@ const settings = {
   scripts: true,
   styles: true,
   pug: true,
-  copy: false,
+  copy: true,
 }
 
 const baseSrc = './app';
@@ -44,7 +44,7 @@ const paths = {
     js: `${baseSrc}/js/**/*.js`,
     scss: `${baseSrc}/scss/**/*.scss`,
     pug: baseSrc,
-    images: `${baseSrc}/images`,
+    images: `${baseSrc}/images/**/*`,
   }
 };
 
@@ -86,7 +86,6 @@ const buildJS = (done) => {
   }
 
   return src([
-    paths.src.js,
     './node_modules/jquery/dist/jquery.min.js',
     './node_modules/popper.js/dist/umd/popper.min.js',
     './node_modules/bootstrap/dist/js/bootstrap.min.js',
@@ -103,10 +102,20 @@ const buildSVG = () => {
     .pipe(dest(paths.dist.images));
 }
 
+const copyFiles = (done) => {
+  if (!settings.copy) {
+    return done();
+  }
+
+  return src(paths.watch.images)
+    .pipe(dest(paths.dist.images));
+};
+
 const watchers = () => {
   watch(paths.watch.scss, buildCSS);
   watch(paths.watch.pug, buildPug);
   watch(paths.watch.js, buildJS);
+  watch(paths.watch.images, copyFiles);
 
   browserSync.init({
     server: {
@@ -123,6 +132,7 @@ exports.default = series(
   buildCSS,
   buildPug,
   buildJS,
+  copyFiles,
   buildSVG,
 );
 
